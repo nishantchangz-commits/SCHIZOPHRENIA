@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mind Timeline v0.1</title>
+<style>body{font-family:Arial,sans-serif;max-width:900px;margin:30px auto;padding:0 16px}
+input,textarea,button{padding:9px;margin:5px 0;width:100%;box-sizing:border-box}
+.card{border:1px solid #ccc;border-radius:8px;padding:12px;margin:10px 0}</style></head>
+<body><h1>Mind Timeline v0.1</h1><p>First browser version: local storage, event capture, labels, context, significance, confidence, links, nested timeline, JSON export.</p>
+<form id="form"><input id="title" placeholder="Event title" required>
+<textarea id="notes" placeholder="Notes"></textarea><button>Add event</button></form>
+<div id="list"></div>
+<script>
+const storageKey="mind_timeline_v0.1";
+let events=JSON.parse(localStorage.getItem(storageKey)||"[]");
+function render(){document.getElementById("list").innerHTML=events.map((e,i)=>
+`<div class="card"><b>${e.title}</b><p>${e.notes||""}</p><small>${e.date}</small>
+<button onclick="removeEvent(${i})">Delete</button></div>`).join("")}
+document.getElementById("form").onsubmit=(e)=>{e.preventDefault();
+events.push({title:document.getElementById("title").value,notes:document.getElementById("notes").value,date:new Date().toISOString()});
+localStorage.setItem(storageKey,JSON.stringify(events));e.target.reset();render()};
+function removeEvent(i){events.splice(i,1);localStorage.setItem(storageKey,JSON.stringify(events));render()}
+render();
+</script></body></html>

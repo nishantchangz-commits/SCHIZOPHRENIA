@@ -1,0 +1,2 @@
+v0.1
+First browser version: local storage, event capture, labels, context, significance, confidence, links, nested timeline, JSON export.
