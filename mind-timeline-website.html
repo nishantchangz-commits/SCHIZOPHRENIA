@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mind Timeline — a quieter way to keep track</title>
+<meta name="description" content="A private timeline for people living with schizophrenia to note moments, separate observation from interpretation, and reflect alongside their care team.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F1EC;
+    --bg-raised:#EDEAE2;
+    --ink:#243129;
+    --ink-soft:#4B5750;
+    --muted:#767E76;
+    --accent:#3E6E64;
+    --accent-soft:#DDE7E3;
+    --warm:#C98A4B;
+    --line:#DAD3C4;
+    --max:1080px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    margin:0;
+    color:var(--ink);
+    letter-spacing:-0.01em;
+  }
+  p{margin:0;}
+  a{color:inherit;}
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 28px;}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    background:rgba(243,241,236,0.88);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s ease;
+  }
+  header.scrolled{border-bottom-color:var(--line);}
+  .header-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px;
+    max-width:var(--max); margin:0 auto;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces',serif; font-size:19px; font-weight:500;
+  }
+  .logo .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--ink); color:var(--bg);
+    padding:10px 20px; border-radius:100px;
+    font-size:14.5px; font-weight:500;
+    text-decoration:none;
+    border:1px solid var(--ink);
+    cursor:pointer;
+    transition:background .2s ease, color .2s ease, transform .2s ease;
+  }
+  .btn:hover{background:transparent; color:var(--ink); transform:translateY(-1px);}
+  .btn-ghost{
+    background:transparent; color:var(--ink); border:1px solid var(--line);
+  }
+  .btn-ghost:hover{border-color:var(--ink); background:transparent;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding:88px 0 64px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:56px;
+    align-items:center;
+  }
+  .eyebrow{
+    color:var(--accent);
+    font-size:14.5px;
+    font-weight:500;
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:clamp(34px, 4.6vw, 54px);
+    line-height:1.08;
+    max-width:11.5ch;
+  }
+  .hero-sub{
+    margin-top:22px;
+    font-size:18px;
+    color:var(--ink-soft);
+    max-width:46ch;
+    line-height:1.6;
+  }
+  .hero-actions{
+    margin-top:34px;
+    display:flex; gap:14px; flex-wrap:wrap;
+    align-items:center;
+  }
+  .hero-note{
+    margin-top:16px;
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  .constellation{
+    position:relative;
+    height:340px;
+    border-radius:20px;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .constellation svg{width:100%; height:100%; display:block;}
+  .node{fill:var(--accent); opacity:0;}
+  .node.warm{fill:var(--warm);}
+  .thread{
+    stroke:var(--ink);
+    stroke-opacity:0.14;
+    stroke-width:1.2;
+    fill:none;
+    stroke-dasharray:220;
+    stroke-dashoffset:220;
+  }
+  .node{animation:fadeIn .6s ease forwards;}
+  .thread{animation:draw 1s ease forwards;}
+
+  @keyframes fadeIn{to{opacity:1;}}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+
+  /* ---------- intro statement ---------- */
+  .statement{
+    padding:64px 0 30px;
+    border-top:1px solid var(--line);
+  }
+  .statement .wrap{max-width:760px;}
+  .statement h2{
+    font-size:clamp(24px, 3vw, 32px);
+    line-height:1.35;
+    font-weight:500;
+    color:var(--ink);
+  }
+  .statement h2 em{
+    font-style:normal;
+    color:var(--accent);
+  }
+
+  /* ---------- features ---------- */
+  .features{padding:60px 0 20px;}
+  .feature-row{
+    display:grid;
+    grid-template-columns:0.95fr 1.05fr;
+    gap:50px;
+    align-items:center;
+    padding:56px 0;
+    border-top:1px solid var(--line);
+  }
+  .feature-row:nth-child(even) .feature-visual{order:2;}
+  .feature-row:nth-child(even) .feature-text{order:1;}
+  .feature-index{
+    font-size:13.5px;
+    color:var(--muted);
+    margin-bottom:14px;
+  }
+  .feature-text h3{
+    font-size:26px;
+    line-height:1.3;
+    margin-bottom:14px;
+  }
+  .feature-text p{
+    color:var(--ink-soft);
+    font-size:16px;
+    line-height:1.65;
+    max-width:42ch;
+  }
+  .tag-list{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-top:18px;
+  }
+  .tag{
+    font-size:13px; color:var(--ink-soft);
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    padding:5px 12px; border-radius:100px;
+  }
+
+  /* feature visuals */
+  .feature-visual{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px;
+    min-height:260px;
+  }
+
+  .mock-card{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .mock-entry{
+    display:flex; gap:14px;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .mock-entry:last-child{border-bottom:none;}
+  .mock-phase{
+    flex-shrink:0;
+    width:64px;
+    font-size:11.5px;
+    color:var(--muted);
+    padding-top:2px;
+  }
+  .mock-body{flex:1;}
+  .mock-title{font-size:14.5px; font-weight:500; margin-bottom:4px;}
+  .mock-meta{font-size:12.5px; color:var(--muted); display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .pill{
+    font-size:11px; padding:2px 9px; border-radius:100px;
+    border:1px solid var(--line); color:var(--ink-soft);
+  }
+  .pill.obs{background:var(--accent-soft); border-color:var(--accent-soft); color:var(--accent);}
+  .pill.interp{background:#F1E4D6; border-color:#F1E4D6; color:var(--warm);}
+  .dots{display:inline-flex; gap:3px;}
+  .dot-sm{width:5px; height:5px; border-radius:50%; background:var(--line);}
+  .dot-sm.on{background:var(--warm);}
+
+  .split-cols{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .split-col h4{
+    font-family:'Inter'; font-size:12.5px; font-weight:600; color:var(--muted);
+    margin:0 0 10px;
+  }
+  .split-block{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:12px 14px; font-size:13.5px; color:var(--ink-soft); line-height:1.55;
+    min-height:70px;
+  }
+
+  .map-mock{
+    position:relative; height:230px; border-radius:10px;
+    background:var(--bg);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .map-dot{
+    position:absolute; width:8px; height:8px; border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 5px var(--accent-soft);
+  }
+  .map-label{
+    position:absolute; font-size:11px; color:var(--ink-soft);
+    background:var(--bg); padding:2px 6px; border-radius:4px;
+    border:1px solid var(--line);
+    transform:translate(10px,-6px);
+  }
+
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  .stat-block{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:16px 14px;
+  }
+  .stat-num{font-family:'Fraunces'; font-size:26px; color:var(--ink);}
+  .stat-label{font-size:12px; color:var(--muted); margin-top:4px;}
+
+  /* ---------- privacy / commitment ---------- */
+  .commitment{
+    padding:70px 0;
+    border-top:1px solid var(--line);
+    background:var(--bg-raised);
+  }
+  .commitment-grid{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:36px;
+  }
+  .commitment h2{
+    font-size:28px; margin-bottom:34px; max-width:20ch;
+  }
+  .commitment-item h4{
+    font-family:'Inter'; font-size:15.5px; font-weight:600; margin-bottom:10px;
+  }
+  .commitment-item p{
+    font-size:14.5px; color:var(--ink-soft); line-height:1.6;
+  }
+
+  /* ---------- closing cta ---------- */
+  .closing{padding:80px 0; text-align:left;}
+  .closing h2{font-size:clamp(28px,4vw,40px); max-width:16ch; line-height:1.2;}
+  .closing-sub{margin-top:18px; font-size:16.5px; color:var(--ink-soft); max-width:48ch;}
+  .closing-actions{margin-top:32px; display:flex; gap:14px; flex-wrap:wrap;}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:34px 0 44px;
+  }
+  .footer-note{
+    font-size:13.5px; color:var(--muted); line-height:1.7; max-width:64ch;
+  }
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    gap:24px; flex-wrap:wrap; margin-top:26px;
+  }
+  .footer-links{display:flex; gap:20px; font-size:13.5px; color:var(--ink-soft);}
+  .footer-links a{text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:2px;}
+  .footer-links a:hover{border-color:var(--ink);}
+
+  @media (max-width: 860px){
+    .hero-grid{grid-template-columns:1fr;}
+    .feature-row{grid-template-columns:1fr; gap:24px;}
+    .feature-row:nth-child(even) .feature-visual,
+    .feature-row:nth-child(even) .feature-text{order:initial;}
+    .commitment-grid{grid-template-columns:1fr; gap:28px;}
+    .stat-row{grid-template-columns:1fr 1fr;}
+    .split-cols{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="header-row">
+    <div class="logo"><span class="dot"></span>Mind Timeline</div>
+    <a class="btn btn-ghost" href="https://mind-timeline-v40.hatchable.site" target="_blank" rel="noopener">Sign in</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">For tracking experiences related to schizophrenia</div>
+      <h1>A quieter way to keep track of what's happening.</h1>
+      <p class="hero-sub">Mind Timeline is a private space to note moments as they happen, keep what you observed separate from what you think it means, and see the shape of things over time — on your own, or alongside the people supporting your care.</p>
+      <div class="hero-actions">
+        <a class="btn" href="https://mind-timeline-v40.hatchable.site" target="_blank" rel="noopener">Open Mind Timeline</a>
+        <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+      </div>
+      <p class="hero-note">Free passwordless sign-in with email. Your entries are visible only to you.</p>
+    </div>
+    <div class="constellation" aria-hidden="true">
+      <svg viewBox="0 0 400 340">
+        <path class="thread" d="M70,240 C120,180 150,190 190,140" style="animation-delay:.2s"/>
+        <path class="thread" d="M190,140 C230,110 250,150 300,120" style="animation-delay:.5s"/>
+        <path class="thread" d="M190,140 C170,90 130,80 100,60" style="animation-delay:.8s"/>
+        <path class="thread" d="M300,120 C320,170 290,210 250,230" style="animation-delay:1.1s"/>
+        <circle class="node" cx="70" cy="240" r="6" style="animation-delay:.1s"/>
+        <circle class="node warm" cx="190" cy="140" r="7" style="animation-delay:.4s"/>
+        <circle class="node" cx="300" cy="120" r="5" style="animation-delay:.7s"/>
+        <circle class="node" cx="100" cy="60" r="5" style="animation-delay:1s"/>
+        <circle class="node" cx="250" cy="230" r="6" style="animation-delay:1.3s"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="statement">
+  <div class="wrap">
+    <h2>Not every moment needs a conclusion right away. <em>Mind Timeline gives you somewhere to put it down first, and make sense of it later.</em></h2>
+  </div>
+</section>
+
+<section class="features" id="how-it-works">
+  <div class="wrap">
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-index">Timeline</div>
+        <h3>Note things as they happen</h3>
+        <p>Each entry has a title, a phase, and room for context — plus optional tags and a location, if that's useful. Nothing is required beyond what you want to write down.</p>
+        <div class="tag-list">
+          <span class="tag">Early</span><span class="tag">Ongoing</span><span class="tag">Resolved</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="mock-card">
+          <div class="mock-entry">
+            <div class="mock-phase">Early</div>
+            <div class="mock-body">
+              <div class="mock-title">Trouble sleeping, restless</div>
+              <div class="mock-meta"><span class="pill obs">Observation</span> · Tue, evening</div>
+            </div>
+          </div>
+          <div class="mock-entry">
+            <div class="mock-phase">Ongoing</div>
+            <div class="mock-body">
+              <div class="mock-title">Felt like radio was reacting to me</div>
+              <div class="mock-meta"><span class="pill interp">Interpretation</span> · Wed, 9:40am</div>
+            </div>
+          </div>
+          <div class="mock-entry">
+            <div class="mock-phase">Ongoing</div>
+            <div class="mock-body">
+              <div class="mock-title">Called Dr. Ansari, moved appointment up</div>
+              <div class="mock-meta"><span class="pill obs">Observation</span> · Wed, 2:15pm</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-index">Observation vs. interpretation</div>
+        <h3>What happened, and what you made of it — kept apart</h3>
+        <p>Writing the two down separately makes it easier to come back later and ask: how sure am I about this, and how much does it matter? Confidence and significance are rated on their own scale, so a thought isn't automatically treated as fact.</p>
+      </div>
+      <div class="feature-visual">
+        <div class="split-cols">
+          <div class="split-col">
+            <h4>Observation</h4>
+            <div class="split-block">"My neighbor's TV was louder than usual around 11pm."</div>
+          </div>
+          <div class="split-col">
+            <h4>Interpretation</h4>
+            <div class="split-block">"I thought it might be aimed at me."</div>
+          </div>
+        </div>
+        <div class="tag-list" style="margin-top:16px;">
+          <span class="tag">Confidence <span class="dots"><span class="dot-sm on"></span><span class="dot-sm on"></span><span class="dot-sm"></span><span class="dot-sm"></span><span class="dot-sm"></span></span></span>
+          <span class="tag">Significance <span class="dots"><span class="dot-sm on"></span><span class="dot-sm"></span><span class="dot-sm"></span><span class="dot-sm"></span><span class="dot-sm"></span></span></span>
+          <span class="tag">Evidence: unclear</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-index">Mind map &amp; 24-hour view</div>
+        <h3>See how moments connect, without forcing a story</h3>
+        <p>Draw a line between two entries when they feel related, and step back to see the map you've built. A separate 24-hour view keeps same-day entries close together, for patterns that unfold in hours rather than weeks.</p>
+      </div>
+      <div class="feature-visual">
+        <svg viewBox="0 0 400 230" style="width:100%; height:230px;">
+          <line x1="70" y1="170" x2="180" y2="100" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="180" y1="100" x2="300" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+          <line x1="180" y1="100" x2="150" y2="40" stroke="var(--line)" stroke-width="1.5"/>
+          <circle cx="70" cy="170" r="7" fill="var(--accent)"/>
+          <circle cx="180" cy="100" r="8" fill="var(--warm)"/>
+          <circle cx="300" cy="150" r="7" fill="var(--accent)"/>
+          <circle cx="150" cy="40" r="6" fill="var(--accent)"/>
+          <text x="82" y="174" font-size="11" fill="var(--ink-soft)" font-family="Inter">sleep</text>
+          <text x="192" y="98" font-size="11" fill="var(--ink-soft)" font-family="Inter">radio</text>
+          <text x="312" y="154" font-size="11" fill="var(--ink-soft)" font-family="Inter">call doctor</text>
+          <text x="115" y="36" font-size="11" fill="var(--ink-soft)" font-family="Inter">neighbor's TV</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-index">Research directory</div>
+        <h3>A public map of people researching schizophrenia</h3>
+        <p>Browse researchers by institution, city, or topic, with links to their published work. This directory is separate, public information — it's never mixed with your private entries.</p>
+      </div>
+      <div class="feature-visual">
+        <div class="map-mock">
+          <div class="map-dot" style="top:60px; left:80px;"></div>
+          <div class="map-label" style="top:52px; left:88px;">UCSF · psychosis risk</div>
+          <div class="map-dot" style="top:120px; left:210px;"></div>
+          <div class="map-label" style="top:112px; left:218px;">King's College London</div>
+          <div class="map-dot" style="top:150px; left:120px;"></div>
+          <div class="map-label" style="top:158px; left:60px;">U. of Toronto</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-index">Summary &amp; export</div>
+        <h3>A neutral summary, ready to bring to an appointment</h3>
+        <p>Export your entries as a plain, factual summary or as JSON. It's written to describe patterns, not to diagnose them — useful for a conversation with a psychiatrist, therapist, or someone close to you.</p>
+      </div>
+      <div class="feature-visual">
+        <div class="stat-row">
+          <div class="stat-block"><div class="stat-num">42</div><div class="stat-label">Entries total</div></div>
+          <div class="stat-block"><div class="stat-num">27</div><div class="stat-label">Observations</div></div>
+          <div class="stat-block"><div class="stat-num">3.1</div><div class="stat-label">Avg. confidence</div></div>
+          <div class="stat-block"><div class="stat-num">6</div><div class="stat-label">High significance</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="commitment">
+  <div class="wrap">
+    <h2>How this fits with your care</h2>
+    <div class="commitment-grid">
+      <div class="commitment-item">
+        <h4>Yours alone</h4>
+        <p>Personal entries are scoped to your signed-in account. No one else can read them unless you choose to share your summary.</p>
+      </div>
+      <div class="commitment-item">
+        <h4>Not a diagnosis</h4>
+        <p>Mind Timeline doesn't interpret your entries for you or generate clinical conclusions. It's a record, not a verdict.</p>
+      </div>
+      <div class="commitment-item">
+        <h4>Built alongside care</h4>
+        <p>This works best as a companion to a psychiatrist, therapist, or care team — not as a replacement for treatment or emergency support.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <h2>Start with one entry.</h2>
+    <p class="closing-sub">You don't need a plan to begin — just something you noticed today. The timeline builds itself from there.</p>
+    <div class="closing-actions">
+      <a class="btn" href="https://mind-timeline-v40.hatchable.site" target="_blank" rel="noopener">Open Mind Timeline</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-note">Mind Timeline is a personal tracking tool. It is not a medical device and does not diagnose or treat any condition. If you or someone you know is in crisis, please contact local emergency services or a crisis line in your area.</p>
+    <div class="footer-row">
+      <div class="logo" style="font-size:15px;"><span class="dot" style="width:7px;height:7px;"></span>Mind Timeline</div>
+      <div class="footer-links">
+        <a href="https://mind-timeline-v40.hatchable.site" target="_blank" rel="noopener">Sign in</a>
+        <a href="#how-it-works">How it works</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const header = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 8);
+  });
+</script>
+
+</body>
+</html>
