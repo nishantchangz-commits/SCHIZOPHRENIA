@@ -1,0 +1,157 @@
+{
+  "name": "SCHIZO AGENT v1.0",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "schizo-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "acc3262a-eaa7-4ba0-aeff-9acbbc2ae1cd",
+      "name": "Schizo v10 Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "eab85ab3-aa9b-411a-a881-f5a344219bb3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.prompt }}",
+        "options": {
+          "systemMessage": "You are Schizo Agent v1.0, a personal organization, data-analysis and research assistant.\n\nYour job is to help the user organize information they provide through their Schizo v10 workspace.\n\nYou can:\n- organize timeline entries\n- summarize notes\n- analyze uploaded CSV files\n- explain descriptive statistical patterns\n- organize memories\n- summarize files\n- organize photos/file metadata when available\n- analyze 24-hour activity records\n- organize research papers and articles\n- help organize movies and music records\n- explain surface-level relationships between user-provided records\n- assist with the user machine-learning research workflow\n- communicate with Python/FastAPI services\n- report model results clearly\n\nAlways distinguish:\n1. Direct observation/data\n2. User-provided interpretation\n3. Agent inference\n4. Uncertainty\n\nNever:\n- diagnose schizophrenia\n- confirm that a user has schizophrenia from data\n- infer schizophrenia or another health condition about another person\n- claim that a statistical pattern proves a medical condition\n- fabricate research results\n- fabricate model accuracy\n- fabricate missing data\n- expose private user information\n- treat correlations as causation\n\nWhen information is missing, explicitly say what is missing.\n\nWhen analyzing a machine-learning model, clearly distinguish:\n- model prediction\n- probability/confidence if available\n- evaluation metric\n- limitations\n\nDo not describe a research model as a clinical diagnostic system.\n\nFor urgent medical or safety concerns, recommend contacting an appropriate qualified professional or emergency service.\n\nYou have access to the CSV_Data_Lab tool. Use it whenever the user asks to analyze a CSV, show missing values, duplicates, or descriptive statistics. Pass the raw CSV text to the tool and report only the numbers it returns. Never invent values.\n\nRespond with a clear, concise natural-language answer."
+        }
+      },
+      "id": "337cbae7-b544-4507-827d-fc2385901e56",
+      "name": "Schizo AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "0fcff9b8-b065-4b7e-b289-415ff61ac210",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Analyze raw CSV text and return descriptive statistics as JSON: rows, columns, missing values, duplicates, unique values, numeric/categorical columns, min/max/mean/median/std, and data completeness. Provide the full CSV content as a string.",
+        "jsCode": "\n// CSV Data Lab - descriptive statistics only. No fabricated values.\nfunction parseCsv(text) {\n  const lines = String(text).replace(/\\r\\n/g, '\\n').split('\\n').filter(function (l) { return l.length > 0; });\n  const rows = lines.map(function (line) {\n    const out = [];\n    let cur = '';\n    let inQ = false;\n    for (let i = 0; i < line.length; i++) {\n      const ch = line[i];\n      if (ch === '\"') { inQ = !inQ; continue; }\n      if (ch === ',' && !inQ) { out.push(cur); cur = ''; continue; }\n      cur += ch;\n    }\n    out.push(cur);\n    return out.map(function (c) { return c.trim(); });\n  });\n  return rows;\n}\n\nlet raw = query;\nif (raw && typeof raw === 'object') {\n  raw = raw.csv_data || raw.csv || raw.text || raw.query || '';\n}\nif (!raw || String(raw).trim().length === 0) {\n  return JSON.stringify({ status: 'error', error: 'no_csv', message: 'No CSV text was provided to analyze.' });\n}\n\nconst grid = parseCsv(raw);\nif (grid.length < 2) {\n  return JSON.stringify({ status: 'error', error: 'insufficient_data', message: 'CSV needs a header row and at least one data row.' });\n}\n\nconst header = grid[0];\nconst dataRows = grid.slice(1);\nconst columns = header.length;\nconst rowsCount = dataRows.length;\n\nlet missing = 0;\nconst seen = {};\nlet duplicates = 0;\nfor (let r = 0; r < dataRows.length; r++) {\n  const rowKey = dataRows[r].join('\\u0001');\n  if (seen[rowKey]) { duplicates++; } else { seen[rowKey] = true; }\n  for (let c = 0; c < columns; c++) {\n    const v = dataRows[r][c];\n    if (v === undefined || v === '' || v === null) { missing++; }\n  }\n}\n\nconst numericCols = [];\nconst categoricalCols = [];\nconst stats = {};\nconst uniqueCounts = {};\n\nfor (let c = 0; c < columns; c++) {\n  const name = header[c] || ('col_' + c);\n  const values = [];\n  const nonEmpty = [];\n  let numericCount = 0;\n  const uniq = {};\n  for (let r = 0; r < dataRows.length; r++) {\n    const v = dataRows[r][c];\n    if (v === undefined || v === '') continue;\n    nonEmpty.push(v);\n    uniq[v] = true;\n    const num = Number(v);\n    if (v !== '' && !isNaN(num)) { values.push(num); numericCount++; }\n  }\n  uniqueCounts[name] = Object.keys(uniq).length;\n  const isNumeric = nonEmpty.length > 0 && numericCount === nonEmpty.length;\n  if (isNumeric) {\n    numericCols.push(name);\n    values.sort(function (a, b) { return a - b; });\n    const n = values.length;\n    const sum = values.reduce(function (a, b) { return a + b; }, 0);\n    const mean = n > 0 ? sum / n : null;\n    let median = null;\n    if (n > 0) {\n      const mid = Math.floor(n / 2);\n      median = n % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];\n    }\n    let std = null;\n    if (n > 1 && mean !== null) {\n      const variance = values.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / (n - 1);\n      std = Math.sqrt(variance);\n    }\n    stats[name] = {\n      min: n > 0 ? values[0] : null,\n      max: n > 0 ? values[n - 1] : null,\n      mean: mean,\n      median: median,\n      std: std,\n    };\n  } else {\n    categoricalCols.push(name);\n  }\n}\n\nconst totalCells = rowsCount * columns;\nconst completeness = totalCells > 0 ? Number((((totalCells - missing) / totalCells) * 100).toFixed(2)) : 0;\n\nconst warnings = [];\nif (duplicates > 0) warnings.push(duplicates + ' duplicate row(s) detected.');\nif (missing > 0) warnings.push(missing + ' missing cell value(s) detected.');\nif (numericCols.length === 0) warnings.push('No fully-numeric columns detected.');\n\nconst result = {\n  status: 'success',\n  rows: rowsCount,\n  columns: columns,\n  column_names: header,\n  missing_values: missing,\n  duplicates: duplicates,\n  unique_values: uniqueCounts,\n  numeric_columns: numericCols,\n  categorical_columns: categoricalCols,\n  statistics: stats,\n  data_completeness_percent: completeness,\n  warnings: warnings,\n};\n\nreturn JSON.stringify(result);\n",
+        "specifyInputSchema": true,
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"csv_data\":{\"type\":\"string\",\"description\":\"The full raw CSV file content, including the header row.\"}},\"required\":[\"csv_data\"]}"
+      },
+      "id": "5421a5b3-b16c-4412-9b86-3e51878dad46",
+      "name": "CSV_Data_Lab",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: \"success\", answer: $json.output, tool_used: \"CSV_DATA_LAB\" }) }}",
+        "options": {}
+      },
+      "id": "e9cb05d2-55ab-48d3-a0a3-f4887ea6141a",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        576,
+        112
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schizo v10 Webhook": {
+      "main": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schizo AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSV_Data_Lab": {
+      "ai_tool": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a516a50c-6bb2-44f9-b06a-c00e212791a9",
+  "meta": {
+    "instanceId": "8858d157edd70b04aa8e65191e7137bed0ad00ccf0abfe98c9092f54902e209d"
+  },
+  "nodeGroups": [],
+  "id": "47cq3c1OR43S149S",
+  "tags": []
+}
