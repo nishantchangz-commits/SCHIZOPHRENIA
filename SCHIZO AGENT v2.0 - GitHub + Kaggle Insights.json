@@ -1,0 +1,699 @@
+{
+  "name": "SCHIZO AGENT v2.0 - GitHub + Kaggle Insights",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are Schizo Agent v1.0, a personal organization, data-analysis and research assistant.\n\nYour job is to help the user organize information they provide through their Schizo v10 workspace.\n\nYou can:\n- organize timeline entries\n- summarize notes\n- analyze uploaded CSV files\n- explain descriptive statistical patterns\n- organize memories\n- summarize files\n- organize photos/file metadata when available\n- analyze 24-hour activity records\n- organize research papers and articles\n- help organize movies and music records\n- explain surface-level relationships between user-provided records\n- assist with the user machine-learning research workflow\n- communicate with Python/FastAPI services\n- report model results clearly\n\nAlways distinguish:\n1. Direct observation/data\n2. User-provided interpretation\n3. Agent inference\n4. Uncertainty\n\nNever:\n- diagnose schizophrenia\n- confirm that a user has schizophrenia from data\n- infer schizophrenia or another health condition about another person\n- claim that a statistical pattern proves a medical condition\n- fabricate research results\n- fabricate model accuracy\n- fabricate missing data\n- expose private user information\n- treat correlations as causation\n\nWhen information is missing, explicitly say what is missing.\n\nWhen analyzing a machine-learning model, clearly distinguish:\n- model prediction\n- probability/confidence if available\n- evaluation metric\n- limitations\n\nDo not describe a research model as a clinical diagnostic system.\n\nFor urgent medical or safety concerns, recommend contacting an appropriate qualified professional or emergency service.\n\nTools available to you:\n- CSV_Data_Lab: analyze raw CSV text for missing values, duplicates, and descriptive statistics. Pass the raw CSV text and report only the numbers it returns. Never invent values.\n- kaggle_fetch: download a single uncompressed data file from a Kaggle dataset (owner + dataset + fileName), then feed the returned CSV text to CSV_Data_Lab. If the download returns compressed/binary data, tell the user the file is zipped and cannot be analyzed inline.\n- timeline_database: read or write timeline entries in the Xata database. Use it to record, look up, or organize timeline entries.\n- web_research: search the web with Brave Search for papers, articles, movies, music, or current facts. Use it instead of guessing when external or up-to-date information is needed.\n- python_ml_metrics: compute ML evaluation metrics (accuracy, precision, recall, F1) from provided y_true/y_pred arrays. Report only the metrics it returns; never fabricate model results.\n\nRespond with a clear, concise natural-language answer."
+        }
+      },
+      "id": "337cbae7-b544-4507-827d-fc2385901e56",
+      "name": "Schizo AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        288,
+        -352
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        360,
+        -120
+      ],
+      "id": "996dd145-7594-4812-880d-c924c7fa1e53",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -240
+      ],
+      "id": "e5343877-cbd5-490a-92f9-1474b9c9800f",
+      "name": "When chat message received",
+      "webhookId": "85d72f4c-74a3-4ea8-9d67-5704340c99e2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        232,
+        -120
+      ],
+      "id": "1854749d-c32e-4061-a660-bce92b167022",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1IDPdP0WguGKtraOsu7UUDg34EJhQ3EYzjX2GiwFJvR4",
+          "mode": "list",
+          "cachedResultName": "SchizophreniaSymptomnsData",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IDPdP0WguGKtraOsu7UUDg34EJhQ3EYzjX2GiwFJvR4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 775612889,
+          "mode": "list",
+          "cachedResultName": "SchizophreniaSymptomnsData.csv",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IDPdP0WguGKtraOsu7UUDg34EJhQ3EYzjX2GiwFJvR4/edit#gid=775612889"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        488,
+        -120
+      ],
+      "id": "a511ab86-eaed-48ce-99d5-7fddd1c0bf03",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CHJy1dvJTpAIHhqz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sheetId": "DVNbB47SFbwE3fYNVLxO9TFTfurmKK\n"
+      },
+      "type": "n8n-nodes-csvbox.csvboxTrigger",
+      "typeVersion": 1,
+      "position": [
+        352,
+        48
+      ],
+      "id": "a43b5ff2-52cc-4c00-b2b4-18ba5d3d3bc5",
+      "name": "CSVBox Trigger",
+      "webhookId": "654f6ebd-40f5-45a6-9160-a86dd24f88e4",
+      "credentials": {
+        "csvboxApi": {
+          "id": "VJspDN8owhV7YSv8",
+          "name": "CSVBox account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "sheetsUi": {
+          "sheetValues": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        144
+      ],
+      "id": "175c045c-3646-4910-9d1c-5d0e84dc91ea",
+      "name": "Create spreadsheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CHJy1dvJTpAIHhqz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        -256
+      ],
+      "id": "0ab11efb-f227-4487-a9b8-661d80835415",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        760,
+        -24
+      ],
+      "id": "2782fa27-4928-4042-b7e5-fb7cd4a4fa55",
+      "name": "Anthropic Chat Model1",
+      "credentials": {
+        "anthropicApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chartOptions": {},
+        "datasetOptions": {}
+      },
+      "type": "n8n-nodes-base.quickChart",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        144
+      ],
+      "id": "808c3ff3-b4b7-44c6-afa3-f57473617d15",
+      "name": "QuickChart"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        144
+      ],
+      "id": "b8508be1-3d67-406c-b719-d7cd7aeb4719",
+      "name": "Send a message",
+      "webhookId": "3eed4b99-9b86-4ad7-856e-4becc1046aa5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "efnZJSsrYmlHLI6I",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "owner": "YOUR_GITHUB_USERNAME",
+        "repository": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "filePath": "path/to/your/app/file.py",
+        "additionalParameters": {}
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        352,
+        240
+      ],
+      "id": "58112077-b12f-4437-a5af-35f91a5e539e",
+      "name": "GitHub App File",
+      "webhookId": "7c510e9b-089e-4e0d-ac0c-333825624852"
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        264,
+        792
+      ],
+      "id": "f44b39ba-7d1b-4d43-a638-6eb84b6117a0",
+      "name": "Save Insights to Google Sheet"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "kaggle_owner",
+              "value": "owaiskhan9654",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "kaggle_dataset",
+              "value": "training-of-eeg-schizophrenia-disorder-using-cnn",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        1008
+      ],
+      "id": "3d91452b-b4c1-4161-8817-b34451ad2e05",
+      "name": "Set Kaggle Dataset (edit me)"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.kaggle.com/api/v1/datasets/download/{{ $json.kaggle_owner }}/{{ $json.kaggle_dataset }}/{{ $json.kaggle_file }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        1008
+      ],
+      "id": "6c366caf-9415-4aca-8d21-3b5fb235f85d",
+      "name": "Download Kaggle File (zip)"
+    },
+    {
+      "parameters": {
+        "operation": "unzip"
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        448,
+        1008
+      ],
+      "id": "12701b31-5a0f-436b-ba04-abd324032dc0",
+      "name": "Unzip Dataset"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate a potentially HUGE csv in chunks so the LLM never sees raw rows.\n// Analyzes up to MAX_ROWS rows (sample of a big file) - per-column stats + missing values.\nconst MAX_ROWS = 100000;\n\nconst items = $input.all();\nconst firstBinary = items[0].binary || {};\nconst binKey = Object.keys(firstBinary)[0];\nif (!binKey) throw new Error('No binary file found. Check the Unzip node output.');\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, binKey);\nlet text = buffer.toString('utf8');\n\n// strip UTF-8 BOM\nif (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);\n\nconst lines = text.split(/\\r?\\n/);\nconst header = lines[0].split(',').map(h => h.trim().replace(/^\"|\"$/g, ''));\nconst nCols = header.length;\n\nconst stats = header.map(name => ({\n  name, count: 0, missing: 0, numericCount: 0, sum: 0, sumSq: 0,\n  min: Infinity, max: -Infinity, uniques: new Set(), isNumeric: true\n}));\n\nlet rowsAnalyzed = 0;\nfor (let i = 1; i < lines.length && rowsAnalyzed < MAX_ROWS; i++) {\n  const line = lines[i].trim();\n  if (!line) continue;\n  const cells = line.split(',');\n  rowsAnalyzed++;\n  for (let c = 0; c < nCols; c++) {\n    const s = (cells[c] ?? '').trim().replace(/^\"|\"$/g, '');\n    const st = stats[c];\n    if (s === '' || s.toLowerCase() === 'na' || s.toLowerCase() === 'null') { st.missing++; continue; }\n    st.count++;\n    if (st.uniques.size < 1000) st.uniques.add(s);\n    const v = Number(s);\n    if (!Number.isNaN(v) && st.isNumeric) {\n      st.numericCount++; st.sum += v; st.sumSq += v * v;\n      if (v < st.min) st.min = v;\n      if (v > st.max) st.max = v;\n    } else if (Number.isNaN(v)) {\n      // only flip to categorical if a non-numeric value appears after numeric ones or early on\n      if (st.numericCount < st.count) st.isNumeric = false;\n    }\n  }\n}\n\nconst columns = stats.map(st => {\n  const base = {\n    name: st.name,\n    analyzed_non_missing: st.count,\n    missing: st.missing,\n    unique_values: st.uniques.size,\n    type: st.isNumeric && st.numericCount > 0 ? 'numeric' : 'categorical/text'\n  };\n  if (base.type === 'numeric' && st.numericCount > 0) {\n    const mean = st.sum / st.numericCount;\n    const variance = Math.max(0, st.sumSq / st.numericCount - mean * mean);\n    base.mean = +mean.toFixed(4);\n    base.std = +Math.sqrt(variance).toFixed(4);\n    base.min = +st.min.toFixed(4);\n    base.max = +st.max.toFixed(4);\n  } else {\n    base.top_values = [...st.uniques].slice(0, 5);\n  }\n  return base;\n});\n\nreturn [{ json: {\n  source: 'Kaggle Insight Pipeline',\n  total_rows_in_file: lines.length - 1,\n  rows_analyzed: rowsAnalyzed,\n  sampled: rowsAnalyzed < (lines.length - 1),\n  column_count: nCols,\n  columns\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        1008
+      ],
+      "id": "885f6786-fa44-451c-8255-fe9a0ef02500",
+      "name": "Aggregate CSV in Chunks"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here are descriptive statistics computed from a Kaggle dataset (possibly a sample). Turn them into clear, honest insights. Statistics JSON:\n{{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "You are a careful data analyst writing natural-language insights from pre-computed descriptive statistics.\n\nRules:\n- Report ONLY what the statistics show. Never invent values, patterns, or correlations.\n- If the data was sampled (sampled=true), say exactly how many rows were analyzed out of the total.\n- Describe distributions (mean/std/min/max), missingness, and unique counts.\n- Explicitly separate: (1) direct observation, (2) your interpretation, (3) uncertainty.\n- NEVER diagnose schizophrenia or any medical condition. NEVER claim patterns prove a medical condition. This is a research dataset, not a clinical tool.\n- Do not treat correlation as causation.\n- If something is missing (e.g. no target column), say so.\n\nOutput 5-8 concise bullet insights, ending with one 'Limitations' bullet."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        1008
+      ],
+      "id": "13b0c162-b38f-4b5c-9133-1e6f5699a10e",
+      "name": "Insight Writer Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        968,
+        1224
+      ],
+      "id": "5702d9cf-32ee-4893-b315-23bac514609c",
+      "name": "Anthropic Chat Model Insights"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shape the Insight Writer Agent output for the Google Sheets node\nconst out = $input.first().json;\nconst text = out.output || out.text || JSON.stringify(out);\nreturn [{ json: { insight_text: String(text).slice(0, 4000) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        1008
+      ],
+      "id": "14463f99-4f33-4411-a798-40c55ee23f75",
+      "name": "Shape Insight Row"
+    },
+    {
+      "parameters": {
+        "resource": "sheetWithinDocument"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1472,
+        1008
+      ],
+      "id": "9055f11f-59f3-4b9f-aef2-4b9f0c204e61",
+      "name": "Append Insights to Sheet"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are Schizo Agent v2.0, a personal organization, data-analysis and research assistant.\n\nYour job is to help the user organize information they provide through their Schizo workspace, read their app files from GitHub, and turn Kaggle datasets into clear, honest insights.\n\nYou can:\n- organize timeline entries\n- summarize notes\n- analyze uploaded CSV files\n- read the user's app file directly from their GitHub repository (use the GitHub App File tool)\n- explain descriptive statistical patterns produced by the Kaggle Insight Pipeline\n- organize memories, summarize files, organize research papers/articles\n- analyze 24-hour activity records\n- help organize movies and music records\n- explain surface-level relationships between user-provided records\n- assist with the user machine-learning research workflow\n- communicate with Python/FastAPI services\n- report model results clearly\n- read insights saved in Google Sheets (use the Google Sheets tool)\n\nDATA FLOW RULES (important):\n- For small CSVs the user pastes or uploads, analyze directly.\n- For HUGE Kaggle datasets, NEVER ask the user to paste raw rows. Tell them to run the 'Kaggle Insight Pipeline' (manual trigger) which downloads, unzips, aggregates the CSV in chunks, writes natural-language insights and saves them to Google Sheets. Then read the sheet.\n- When you receive aggregated statistics, report only what they show. State the row count that was actually analyzed (it may be a sample of a huge file).\n\nAlways distinguish:\n1. Direct observation/data\n2. User-provided interpretation\n3. Agent inference\n4. Uncertainty\n\nNever:\n- diagnose schizophrenia\n- confirm that a user has schizophrenia from data\n- infer schizophrenia or another health condition about another person\n- claim that a statistical pattern proves a medical condition\n- fabricate research results\n- fabricate model accuracy\n- fabricate missing data\n- expose private user information\n- treat correlations as causation\n\nWhen information is missing, explicitly say what is missing.\n\nWhen analyzing a machine-learning model, clearly distinguish:\n- model prediction\n- probability/confidence if available\n- evaluation metric\n- limitations\n\nDo not describe a research model as a clinical diagnostic system.\n\nFor urgent medical or safety concerns, recommend contacting an appropriate qualified professional or emergency service.\n\nTools available to you:\n- GitHub App File: fetch the user's app source file from their GitHub repository.\n- Google Sheets tools: read/append insight sheets.\n\nRespond with a clear, concise natural-language answer."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        576
+      ],
+      "id": "7418c986-fe0f-4d28-9dfa-15ebbaf24b7a",
+      "name": "Schizo AI Agent1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        136,
+        792
+      ],
+      "id": "cd62d5bd-eafe-4e2f-821a-7197a922043e",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        8,
+        792
+      ],
+      "id": "b65e15e7-95da-4168-a108-5651d897a358",
+      "name": "Anthropic Chat Model2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schizo AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "Schizo AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSVBox Trigger": {
+      "main": [
+        [
+          {
+            "node": "Create spreadsheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "QuickChart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QuickChart": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Insights to Google Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "Schizo AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Kaggle File (zip)": {
+      "main": [
+        [
+          {
+            "node": "Unzip Dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unzip Dataset": {
+      "main": [
+        [
+          {
+            "node": "Aggregate CSV in Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate CSV in Chunks": {
+      "main": [
+        [
+          {
+            "node": "Insight Writer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model Insights": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Insight Writer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insight Writer Agent": {
+      "main": [
+        [
+          {
+            "node": "Shape Insight Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape Insight Row": {
+      "main": [
+        [
+          {
+            "node": "Append Insights to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Kaggle Dataset (edit me)": {
+      "main": [
+        [
+          {
+            "node": "Download Kaggle File (zip)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Schizo AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Schizo AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub App File": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schizo AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "GitHub App File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "18010528-74a5-409e-a919-3eefaab80a7f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8858d157edd70b04aa8e65191e7137bed0ad00ccf0abfe98c9092f54902e209d"
+  },
+  "nodeGroups": [],
+  "id": "47cq3c1OR43S149S",
+  "tags": []
+}
