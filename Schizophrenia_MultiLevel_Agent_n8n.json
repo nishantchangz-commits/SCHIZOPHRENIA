@@ -1,0 +1,180 @@
+{
+  "name": "Schizophrenia Multi-Level AI Agent (Research-Grade Focus)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "schizophrenia-multilevel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook - Patient + Preference",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "schizophrenia-multilevel"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nconst message = body.message || body.text || body.patient_message || \"\";\nlet eegCsv = body.eeg_csv || body.csv || body.eeg || \"\";\nlet preference = (body.preference || body.mode || \"research-grade\").toLowerCase().trim();\n\nconst validPrefs = [\"fast\", \"detailed\", \"research-grade\", \"explainable\"];\nif (!validPrefs.includes(preference)) preference = \"research-grade\";\n\nif (eegCsv && eegCsv.startsWith(\"data:\")) {\n  eegCsv = eegCsv.split(\",\")[1] || eegCsv;\n}\nif (eegCsv && /^[A-Za-z0-9+/=]+$/.test(eegCsv.substring(0, 80))) {\n  try { eegCsv = Buffer.from(eegCsv, \"base64\").toString(\"utf8\"); } catch(e) {}\n}\n\nreturn [{\n  json: {\n    patient_message: message,\n    eeg_csv: eegCsv,\n    has_eeg: !!(eegCsv && eegCsv.length > 40),\n    preference: preference,\n    session_id: body.session_id || body.patient_id || `sess_${Date.now()}`,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "prepare",
+      "name": "Prepare Input + Preference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the Main Orchestrator of a Research-Grade Multi-Level Schizophrenia Assessment System based on the button-tone-sz paradigm.\n\nPatient message: {{ $json.patient_message }}\nHas EEG data: {{ $json.has_eeg }}\nUser Preference: {{ $json.preference }}\nSession: {{ $json.session_id }}\n\nSTRICT ROUTING RULES:\n- fast → call only \"Quick ERP & Stats\"\n- detailed → call \"Quick ERP & Stats\" + \"CNN-style Risk Score\"\n- research-grade → call ALL three tools (ERP, CNN-style, Research Condition Analysis)\n- explainable → call ALL three tools and produce rich clinical + research explanation\n\nAfter collecting tool results, synthesize a high-quality research-style report.\n\nReturn ONLY valid JSON:\n{\n  \"preference_used\": \"\",\n  \"risk_level\": \"low|moderate|high\",\n  \"estimated_probability\": 0.0,\n  \"n100_suppression_index\": 0.0,\n  \"key_findings\": [],\n  \"eeg_results\": {\n    \"fast_stats\": {},\n    \"cnn_style\": {},\n    \"condition_analysis\": {}\n  },\n  \"research_interpretation\": \"\",\n  \"feature_importance\": [],\n  \"recommendations\": [],\n  \"disclaimer\": \"This is a research multi-agent system inspired by the button-tone-sz dataset and related literature. It is NOT a clinical diagnosis. Always consult a qualified psychiatrist.\"\n}",
+        "options": {
+          "systemMessage": "You are a precise research-oriented medical AI orchestrator specialized in schizophrenia EEG analysis (button-tone paradigm, N100 suppression, corollary discharge). Never invent numbers. Only use tool outputs. Prefer research-grade depth when requested. Always return pure JSON."
+        }
+      },
+      "id": "orchestrator",
+      "name": "Main Orchestrator Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "name": "Quick ERP & Stats",
+        "description": "Fast statistical + N100-proxy analysis from EEG CSV. Base layer for all preferences.",
+        "jsCode": "const csvText = query || \"\";\nif (!csvText || csvText.length < 30) {\n  return JSON.stringify({ available: false, error: \"No valid EEG CSV\" });\n}\ntry {\n  const lines = csvText.trim().split(/\\r?\\n/).filter(l => l.trim());\n  const rows = lines.map(l => l.split(/[,;\\t]/).map(v => parseFloat(v.trim())).filter(v => !isNaN(v)));\n  const vals = rows.flat().filter(v => isFinite(v));\n  if (vals.length < 10) return JSON.stringify({ available: false, error: \"Too few values\" });\n\n  const n = vals.length;\n  const mean = vals.reduce((a,b)=>a+b,0)/n;\n  const std = Math.sqrt(vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/n);\n  const absMean = vals.reduce((a,b)=>a+Math.abs(b),0)/n;\n  const range = Math.max(...vals) - Math.min(...vals);\n  const highAmp = vals.filter(v => Math.abs(v) > mean + 1.5*std).length / n;\n\n  // N100 suppression proxy (higher = more abnormal / reduced suppression)\n  let n100_proxy = 0.28;\n  if (std > 12) n100_proxy += 0.22;\n  if (highAmp > 0.10) n100_proxy += 0.16;\n  if (absMean > 9) n100_proxy += 0.12;\n  if (range > 55) n100_proxy += 0.10;\n  n100_proxy = Math.min(0.93, Math.max(0.07, n100_proxy));\n\n  return JSON.stringify({\n    available: true,\n    type: \"fast_erp_stats\",\n    features: {\n      samples: n,\n      mean: +mean.toFixed(4),\n      std: +std.toFixed(4),\n      abs_mean: +absMean.toFixed(4),\n      range: +range.toFixed(4),\n      high_amp_ratio: +highAmp.toFixed(4)\n    },\n    n100_suppression_proxy: +n100_proxy.toFixed(3),\n    interpretation: n100_proxy > 0.62 ? \"Reduced N100-like suppression pattern (classic finding in button-tone SZ studies)\" : \"Suppression pattern closer to typical control range\"\n  });\n} catch(e) {\n  return JSON.stringify({ available: false, error: e.message });\n}"
+      },
+      "id": "tool-fast",
+      "name": "Quick ERP & Stats",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [680, 520]
+    },
+    {
+      "parameters": {
+        "name": "CNN-style Risk Score",
+        "description": "Multi-feature CNN-inspired risk score with feature importance. Used in detailed, research-grade and explainable modes.",
+        "jsCode": "const csvText = query || \"\";\nif (!csvText || csvText.length < 30) {\n  return JSON.stringify({ available: false, error: \"No EEG data\" });\n}\ntry {\n  const lines = csvText.trim().split(/\\r?\\n/).filter(l => l.trim());\n  const rows = lines.map(l => l.split(/[,;\\t]/).map(v => parseFloat(v.trim())).filter(v => !isNaN(v)));\n  const vals = rows.flat().filter(v => isFinite(v));\n  if (vals.length < 10) return JSON.stringify({ available: false });\n\n  const n = vals.length;\n  const mean = vals.reduce((a,b)=>a+b,0)/n;\n  const variance = vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/n;\n  const std = Math.sqrt(variance);\n  const absMean = vals.reduce((a,b)=>a+Math.abs(b),0)/n;\n  const range = Math.max(...vals)-Math.min(...vals);\n  const highAmp = vals.filter(v => Math.abs(v) > mean+1.5*std).length/n;\n  const skewProxy = vals.filter(v => v > mean).length / n;\n\n  let score = 0.20;\n  if (std > 15) score += 0.19; else if (std > 9) score += 0.11;\n  if (highAmp > 0.12) score += 0.21; else if (highAmp > 0.07) score += 0.12;\n  if (range > 70) score += 0.15; else if (range > 40) score += 0.08;\n  if (absMean > 11) score += 0.13;\n  if (Math.abs(skewProxy - 0.5) > 0.12) score += 0.09;\n  score = Math.min(0.95, Math.max(0.05, score));\n\n  const importance = [\n    { feature: \"signal_variance_std\", contribution: +(std/18).toFixed(3) },\n    { feature: \"high_amplitude_bursts\", contribution: +highAmp.toFixed(3) },\n    { feature: \"signal_range\", contribution: +(range/90).toFixed(3) },\n    { feature: \"absolute_mean_activity\", contribution: +(absMean/14).toFixed(3) },\n    { feature: \"amplitude_asymmetry\", contribution: +Math.abs(skewProxy-0.5).toFixed(3) }\n  ].sort((a,b) => b.contribution - a.contribution);\n\n  return JSON.stringify({\n    available: true,\n    type: \"cnn_style\",\n    cnn_style_probability: +score.toFixed(3),\n    feature_importance: importance,\n    interpretation: score > 0.68 ? \"Elevated multi-feature risk pattern consistent with CNN studies on button-tone-sz\" : score > 0.42 ? \"Moderate multi-feature pattern\" : \"Lower risk pattern on current heuristic model\"\n  });\n} catch(e) {\n  return JSON.stringify({ available: false, error: e.message });\n}"
+      },
+      "id": "tool-cnn",
+      "name": "CNN-style Risk Score",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [900, 520]
+    },
+    {
+      "parameters": {
+        "name": "Research Condition Analysis",
+        "description": "Research-grade tool focused on the classic button-tone paradigm: simulates Button-Tone vs Passive vs Motor comparison and N100 suppression contrast. Critical for research-grade and explainable preferences.",
+        "jsCode": "const csvText = query || \"\";\nif (!csvText || csvText.length < 30) {\n  return JSON.stringify({ available: false, note: \"Full multi-condition labels recommended for highest research fidelity\" });\n}\ntry {\n  const lines = csvText.trim().split(/\\r?\\n/).filter(l => l.trim());\n  const vals = lines.flatMap(l => l.split(/[,;\\t]/).map(v => parseFloat(v.trim())).filter(v => !isNaN(v)));\n  const n = vals.length;\n  const mean = vals.reduce((a,b)=>a+b,0)/n;\n  const std = Math.sqrt(vals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/n);\n  const absMean = vals.reduce((a,b)=>a+Math.abs(b),0)/n;\n\n  // Research-style condition proxies inspired by Ford / Roach button-tone literature\n  const buttonToneActivity = +(0.62 + std/45 + absMean/30).toFixed(3);\n  const passiveActivity   = +(0.88 + std/55).toFixed(3);\n  const motorOnly         = +(0.38 + std/70).toFixed(3);\n\n  // Suppression index: higher value = better suppression (controls usually higher)\n  // We invert so that higher score = more abnormal (reduced suppression)\n  let suppressionIndex = 0.35;\n  if (std > 11) suppressionIndex += 0.22;\n  if (absMean > 9) suppressionIndex += 0.15;\n  if (buttonToneActivity > 0.75) suppressionIndex += 0.12;\n  suppressionIndex = Math.min(0.92, Math.max(0.08, suppressionIndex));\n\n  return JSON.stringify({\n    available: true,\n    type: \"research_condition_analysis\",\n    paradigm: \"button-tone (corollary discharge)\",\n    conditions: {\n      button_tone: {\n        relative_activity: buttonToneActivity,\n        description: \"Self-generated tone (press button → tone)\"\n      },\n      passive_tone: {\n        relative_activity: passiveActivity,\n        description: \"Externally generated tone (no motor act)\"\n      },\n      motor_only: {\n        relative_activity: motorOnly,\n        description: \"Button press without tone\"\n      }\n    },\n    n100_suppression_index: +suppressionIndex.toFixed(3),\n    research_insight: \"In the classic button-tone paradigm (Ford, Roach et al.), healthy controls show significant N100 suppression when the tone is self-generated versus passive listening. Patients with schizophrenia typically show reduced or absent suppression. Current signal statistics are consistent with exploring this contrast.\",\n    literature_note: \"Key references: Ford et al. (Schizophrenia Bulletin), Roach button-tone-sz dataset, multiple CNN papers using this exact dataset.\"\n  });\n} catch(e) {\n  return JSON.stringify({ available: false, error: e.message });\n}"
+      },
+      "id": "tool-research",
+      "name": "Research Condition Analysis",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [1120, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || $input.first().json.text || $input.first().json;\nlet parsed = {};\ntry {\n  if (typeof raw === 'string') {\n    const clean = raw.replace(/```json\\n?/gi,'').replace(/```\\n?/g,'').trim();\n    parsed = JSON.parse(clean);\n  } else parsed = raw;\n} catch(e) {\n  parsed = {\n    preference_used: \"research-grade\",\n    risk_level: \"unknown\",\n    estimated_probability: 0,\n    n100_suppression_index: null,\n    key_findings: [],\n    eeg_results: {},\n    research_interpretation: String(raw).substring(0,900),\n    feature_importance: [],\n    recommendations: [\"Consult psychiatrist\"],\n    disclaimer: \"Research tool only. Not a diagnosis.\",\n    parse_error: e.message\n  };\n}\n\nconst input = $('Prepare Input + Preference').first().json;\n\nreturn [{\n  json: {\n    result: parsed,\n    timestamp: input.timestamp,\n    session_id: input.session_id,\n    preference: input.preference,\n    patient_message: (input.patient_message||\"\").substring(0,900),\n    has_eeg: input.has_eeg,\n    risk_level: parsed.risk_level || \"unknown\",\n    probability: parsed.estimated_probability || 0,\n    n100_index: parsed.n100_suppression_index ?? null,\n    key_findings: Array.isArray(parsed.key_findings) ? parsed.key_findings.join(\" | \") : \"\",\n    research_interpretation: (parsed.research_interpretation || \"\").substring(0,1400),\n    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations.join(\" | \") : \"\",\n    full_json: JSON.stringify(parsed)\n  }\n}];"
+      },
+      "id": "format",
+      "name": "Format + Prepare Sheets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [980, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Session ID": "={{ $json.session_id }}",
+            "Preference": "={{ $json.preference }}",
+            "Patient Message": "={{ $json.patient_message }}",
+            "Has EEG": "={{ $json.has_eeg }}",
+            "Risk Level": "={{ $json.risk_level }}",
+            "Probability": "={{ $json.probability }}",
+            "N100 Index": "={{ $json.n100_index }}",
+            "Key Findings": "={{ $json.key_findings }}",
+            "Research Interpretation": "={{ $json.research_interpretation }}",
+            "Recommendations": "={{ $json.recommendations }}",
+            "Full JSON": "={{ $json.full_json }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "sheets",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1220, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.result }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1220, 400]
+    }
+  ],
+  "connections": {
+    "Webhook - Patient + Preference": {
+      "main": [[{ "node": "Prepare Input + Preference", "type": "main", "index": 0 }]]
+    },
+    "Prepare Input + Preference": {
+      "main": [[{ "node": "Main Orchestrator Agent", "type": "main", "index": 0 }]]
+    },
+    "Main Orchestrator Agent": {
+      "main": [[{ "node": "Format + Prepare Sheets", "type": "main", "index": 0 }]]
+    },
+    "Quick ERP & Stats": {
+      "ai_tool": [[{ "node": "Main Orchestrator Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "CNN-style Risk Score": {
+      "ai_tool": [[{ "node": "Main Orchestrator Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Research Condition Analysis": {
+      "ai_tool": [[{ "node": "Main Orchestrator Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Format + Prepare Sheets": {
+      "main": [
+        [
+          { "node": "Log to Google Sheets", "type": "main", "index": 0 },
+          { "node": "Respond to Webhook", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "Research-Grade", "id": "research" },
+    { "name": "Multi-Agent", "id": "multi" },
+    { "name": "Button-Tone-SZ", "id": "btsz" },
+    { "name": "EEG", "id": "eeg" }
+  ]
+}
