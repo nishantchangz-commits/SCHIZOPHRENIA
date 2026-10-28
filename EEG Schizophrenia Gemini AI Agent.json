@@ -1,0 +1,226 @@
+{
+  "name": "EEG Schizophrenia Gemini AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "78d0b21b-d877-4e66-befe-6441afe6804c",
+      "name": "When chat received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        160
+      ],
+      "webhookId": "8d59a6e6-c457-4572-83d1-4979bb5c4488"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an advanced Computational Neuroscience & Clinical Deep Learning AI Agent powered by Google Gemini, specializing in Schizophrenia pathophysiology, auditory Event-Related Potentials (ERPs), and corollary discharge (sensory attenuation) deficits.\n\nYou have direct access to Brian Roach's 'button-tone-sz' dataset findings, statistical ANOVA models, subject demographics, a trained PyTorch 1D Convolutional Neural Network (CNN), and an Interactive Plotly.js Web Visualizations Dashboard.\n\nLive Interactive Dashboard URL:\nhttps://tri-fcc-favourite-pavilion.trycloudflare.com/dashboard\n\nKey Domain Knowledge & Instructions:\n1. Corollary Discharge / Sensory Attenuation Deficit:\n   - Healthy individuals show marked suppression of the auditory N100 waveform (80-100 ms) when voluntarily pressing a button to produce a tone (Active Tone) compared to hearing the tone alone (Passive Tone).\n   - Schizophrenia patients exhibit a failure of sensory attenuation due to defective fronto-temporal corollary discharge circuits.\n   - At midline channels (Fz, FCz, Cz), healthy controls show an average suppression of ~2.21 uV, whereas schizophrenia patients show only ~0.88 uV (p = 0.0085, Cohen's d = 0.613).\n   - This impairment is specific to the early sensory-gating N100 window and does NOT affect the later P200 component (p > 0.36).\n\n2. Interactive Visualizations & Graphs:\n   - Whenever the user asks for graphs, waveforms, charts, or visual trends, provide clear markdown comparisons AND prominently share the link to the Live Interactive Plotly Dashboard: https://tri-fcc-favourite-pavilion.trycloudflare.com/dashboard\n   - Explain that on the dashboard they can zoom, pan, toggle between Fz/FCz/Cz, hover for exact microvolt measurements, and inspect the 1D CNN ROC curve.\n\n3. Available Tools:\n   - query_study_metrics: Returns statistical ANOVA p-values, t-test statistics, and 1D CNN K-fold performance.\n   - get_subject_profile: Retrieves diagnosis, demographics, and clinical notes for subjects 1 to 81.\n   - predict_eeg_trial: Sends EEG trial values to the PyTorch 1D CNN model for real-time schizophrenia vs healthy control classification.\n   - get_interactive_dashboard: Returns the direct link and data for the interactive Plotly graphs.\n\nAlways provide clear, rigorous scientific explanations with exact statistical figures, markdown tables, and interactive visualization links."
+        }
+      },
+      "id": "c6080cff-49e7-4618-a901-f6ad40a35250",
+      "name": "Neuroscience AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        288,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "4bafe907-fe97-4b25-8917-71de5bb93266",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        384
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "LKdaQPlKzDDeKDA8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "e49d602a-6614-48ca-9fcc-235fbe6e33da",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool to retrieve statistical results: Repeated-Measures ANOVA p-values, t-test effect sizes (Cohen's d) for Fz, FCz, and Cz electrodes, and 1D CNN cross-validation classification metrics.",
+        "url": "https://tri-fcc-favourite-pavilion.trycloudflare.com/metrics"
+      },
+      "id": "a0f17bd2-6f6c-4d88-a724-539c0496f67c",
+      "name": "Query Study Metrics",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool to look up a subject's clinical profile, diagnosis (Healthy Control vs Schizophrenia), age, gender, and education. Provide subject_id as an integer from 1 to 81.",
+        "url": "=https://tri-fcc-favourite-pavilion.trycloudflare.com/subject/{{ $fromAI('subject_id', 'integer ID of the subject from 1 to 81') }}"
+      },
+      "id": "1c649c0c-12ec-4f51-b42d-10708a07d462",
+      "name": "Get Subject Profile",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool to classify an EEG single-trial using the trained PyTorch 1D Convolutional Neural Network. Accepts an optional list of 36 voltage values across 4 time-steps (B0, B1, N100, P200) and 9 channels. Returns predicted diagnosis and confidence.",
+        "method": "POST",
+        "url": "https://tri-fcc-favourite-pavilion.trycloudflare.com/predict",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"trial_data\": {{ $fromAI('trial_data', 'optional list of 36 float EEG voltages or leave empty for synthetic probe') }}\n}"
+      },
+      "id": "cef6c447-d110-461c-9b09-c3a8d2e4421c",
+      "name": "Predict EEG Trial",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool when the user asks for interactive graphs, visual waveforms, or charts. Returns the live interactive Plotly dashboard URL and endpoint data for Fz, FCz, and Cz.",
+        "url": "https://tri-fcc-favourite-pavilion.trycloudflare.com/api/interactive-data"
+      },
+      "id": "398a3e2f-eaf0-4b85-8cd4-2323a18aa46d",
+      "name": "Get Interactive Dashboard",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat received": {
+      "main": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Study Metrics": {
+      "ai_tool": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subject Profile": {
+      "ai_tool": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predict EEG Trial": {
+      "ai_tool": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Interactive Dashboard": {
+      "ai_tool": [
+        [
+          {
+            "node": "Neuroscience AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "0aa61f2a-668e-4916-ad88-88f5411717e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a29dc0a94dd587e65ddb7ef0e2709e0975419e18bad0c2c57cefcb1cecfaae9"
+  },
+  "nodeGroups": [],
+  "id": "VOIvBHeiafq4Wl00",
+  "tags": []
+}
